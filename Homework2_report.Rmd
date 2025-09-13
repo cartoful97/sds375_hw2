@@ -6,7 +6,7 @@ output: html_document
 
 ## Name
 
-Please enter your name here.
+Iris Quan
 
 ### Setup
 
@@ -15,7 +15,10 @@ Read in the data with `read_csv()` and store the data as an R object named `data
 
 ```{r}
 ## Load the data and any necessary packages here.
+library(tidyverse)
 
+dataset <- read_csv('maacs.csv.gz')
+dataset
 ```
 
 ## Part 1
@@ -31,8 +34,22 @@ NOTE: In order to write this function, you will need to translate the statement 
 NOTE: For this part, do not use any plots.
 
 ```{r}
-## Write your function here
 
+# To quickly check if our statement of older children having higher FEV1 values than younger children is true for the dataset, we can find the correlation coefficient between the age variable and the fev1 variable.  If the correlation coefficient is greater than 0, it signifies a positive linear association between age and fev1, suggesting that our statement is true, so we return true. The correlation coefficient being less than or equal to 0 suggests otherwise, so in that case we return false.
+
+# function to check if statement is true
+q1 <- function(data) {
+  # dropping rows with na in age or fev1 column
+  data_nona <- data %>% drop_na(age, fev1)
+  # printing correlation coefficient
+  print(cor(data_nona$age, data_nona$fev1))
+  # true if positive corr coeff, false otherwise
+  return(cor(data_nona$age, data_nona$fev1) > 0)
+}
+
+q1(dataset)
+
+# The function returned true for assessing the validity of the statement "FEV1 values in children are higher in older children relative to younger children" for our dataset.
 ```
 
 
@@ -43,13 +60,18 @@ Fit a linear regression model with FEV1 as the outcome and age as a predictor.
 How much does FEV1 change for a 1-year increase in the child's age? 
 
 ```{r}
-## Add your code here
-
+# fitting linear model
+lmp2 <- lm(fev1 ~ age, data = dataset)
+summary(lmp2)
 ```
 
 
 Write your data analysis statement interpreting the regression model here:
 
+```{r}
+# The coefficients of our linear regression model fitting fev1 on age returned -0.001199 for the intercept and 0.171162 for the slope. The intercept coefficient of -0.001199 liters is the baseline 1 second forced expiratory volume at age = 0.
+# Statement: For every 1 year increase in a child's age, there is an estimated increase of 0.171162 liters in the child's forced expiratory volume in 1 second. 
+```
 
 
 ## Part 3
@@ -58,19 +80,14 @@ Develop **three** supporting premises derived from the data that support the sta
 
 NOTE: At least one supporting premise should use a plot.
 
-```{r}
-## Add your code here
-
-```
-
 
 Write the three supporting premise statements here:
 
-1. 
+1. Supporting Premise 1: boxplots for rounded fev1 vs ages shows increasing median and quartile ages as fev1 increases
 
-2. 
+2. Supporting Premise 2: high positive correlation coefficient between age and fev1
 
-3. 
+3. Supporting Premise 3: scatterplot of age vs fev1 shows positive linear association
 
 
 ## Part 4
@@ -85,20 +102,72 @@ For statements involving plots, instead of returning `TRUE` or `FALSE`, you func
 
 
 ```{r}
-## Function for supporting premise statement 1
+## Supporting Premise 1: boxplots for rounded fev1 vs ages shows increasing median and quartile ages as fev1 increases
 
+supp_premise1 <- function(data) {
+  # rounding fev1 to be pseudo categorical, plotting
+  data$fev1_round <- round(data$fev1)
+  boxplot(age ~ fev1_round, data = data,
+          xlab = 'Forced Expiratory Volume in 1 second (liters)', 
+          ylab = 'Age (years)', main = 'Age vs. FEV1 Boxplot')
+  
+  # hypothetical age and fev1
+  hypo_age = runif(100, 0, 20)
+  hypo_fev1 = hypo_age / 6 + 1 + rnorm(100, 0, 0.5)
+  # floor and ceiling on fev1
+  hypo_fev1[hypo_fev1 < 1] = 1
+  hypo_fev1[hypo_fev1 > 5] = 5
+  # rounding hypothetical fev1 to be pseudo categorical, plotting
+  hypo_fev1_round <- round(hypo_fev1)
+  boxplot(hypo_age ~ hypo_fev1_round, 
+          xlab = 'Hypothetical Forced Expiratory Volume in 1 second (liters)', 
+          ylab = 'Hypothetical Age (years)', 
+          main = 'Hypothetical Age vs. FEV1 Boxplot Assuming Statement True')
+}
+
+supp_premise1(dataset)
+```
+
+
+
+```{r}
+
+## Supporting Premise 2: high (above 0.7) positive correlation coefficient between age and fev1
+
+supp_premise2 <- function(data) {
+  # dropping rows with na in age or fev1 column
+  data_nona <- data %>% drop_na(age, fev1)
+  # printing correlation coefficient
+  print(cor(data_nona$age, data_nona$fev1))
+  # true if positive corr coeff, false otherwise
+  return(cor(data_nona$age, data_nona$fev1) > 0.7)
+}
+
+supp_premise2(dataset)
 ```
 
 
 ```{r}
-## Function for supporting premise statement 2
+## Supporting Premise 3: scatterplot of age vs fev1 shows positive linear association
 
-```
+supp_premise3 <- function(data) {
+  # plotting scatterplot
+  plot(data$age, data$fev1)
 
+  # hypothetical age and fev1
+  hypo_age = runif(100, 0, 20)
+  hypo_fev1 = hypo_age / 6 + 1 + rnorm(100, 0, 0.5)
+  # floor and ceiling on fev1
+  hypo_fev1[hypo_fev1 < 1] = 1
+  hypo_fev1[hypo_fev1 > 5] = 5
+  # plotting hypothetical scatterplot
+  plot(hypo_age, hypo_fev1, 
+       xlab = 'Age (years)',
+       ylab = 'FEV1 (liters)',
+       main = 'Hypothetical Age vs. FEV1 Scatterplot Assuming Statement True')
+}
 
-```{r}
-## Function for supporting premise statement 3
-
+supp_premise3(dataset)
 ```
 
 Execute each of your function and show that the produce the expected output.
@@ -109,6 +178,11 @@ Execute each of your function and show that the produce the expected output.
 ## Part 5
 
 Describe one alternative to the primary statement "FEV1 values in children are higher in older children relative to younger children". 
+
+```{r}
+## Alternative statement: Children's ages have no impact on their FEV1 values; Older children's FEV1 values are neither higher nor lower than the FEV1 values of younger children.
+```
+
 
 Create a fault tree for the alternative outcome describing how the alternative outcome could be realized in the data even if the primary statement were true.
 
